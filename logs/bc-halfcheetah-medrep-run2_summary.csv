@@ -1,0 +1,9 @@
+metric,value,timestamp
+env_name,halfcheetah-medium-replay-v0,2026-02-09T04:02:54.559665
+exp_name,bc-halfcheetah-medrep-run2,2026-02-09T04:02:54.559671
+seed,43,2026-02-09T04:02:54.559673
+n_epochs,1000,2026-02-09T04:02:54.559675
+final_loss,0.102507,2026-02-09T04:02:54.559679
+avg_reward,3942.55,2026-02-09T04:02:54.559682
+std_reward,226.12,2026-02-09T04:02:54.559684
+n_episodes,10,2026-02-09T04:02:54.559686
