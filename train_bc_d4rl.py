@@ -69,13 +69,14 @@ def load_d4rl_dataset(env_name):
     return observations, actions, env
 
 
-def train_bc(env_name, exp_name, seed=42, n_epochs=100, batch_size=256, lr=1e-3):
+def train_bc(env_name, exp_name, seed=42, n_epochs=100, batch_size=256, lr=1e-3, data_ratio=1.0):
     """训练 BC 模型"""
     print(f"==========================================")
     print(f"Training BC on: {env_name}")
     print(f"Experiment name: {exp_name}")
     print(f"Seed: {seed}")
     print(f"Epochs: {n_epochs}")
+    print(f"Data ratio: {data_ratio}")
     print(f"==========================================")
     
     # 设置随机种子
@@ -88,6 +89,17 @@ def train_bc(env_name, exp_name, seed=42, n_epochs=100, batch_size=256, lr=1e-3)
     # 加载 D4RL 数据集
     print("Loading D4RL dataset...")
     observations, actions, env = load_d4rl_dataset(env_name)
+    print(f"Full dataset size: {len(observations)} transitions")
+    
+    # 按比例截取数据
+    if data_ratio < 1.0:
+        n_samples = int(len(observations) * data_ratio)
+        # 随机打乱后截取，保证不同 seed 取到不同子集
+        indices = np.random.permutation(len(observations))[:n_samples]
+        observations = observations[indices]
+        actions = actions[indices]
+        print(f"Using {data_ratio*100:.0f}% of data: {len(observations)} transitions")
+    
     print(f"Dataset size: {len(observations)} transitions")
     print(f"Observation shape: {observations.shape}")
     print(f"Action shape: {actions.shape}")
@@ -285,6 +297,8 @@ def train_bc(env_name, exp_name, seed=42, n_epochs=100, batch_size=256, lr=1e-3)
         writer.writerow(['exp_name', exp_name, datetime.now().isoformat()])
         writer.writerow(['seed', seed, datetime.now().isoformat()])
         writer.writerow(['n_epochs', n_epochs, datetime.now().isoformat()])
+        writer.writerow(['data_ratio', data_ratio, datetime.now().isoformat()])
+        writer.writerow(['n_transitions', len(observations), datetime.now().isoformat()])
         writer.writerow(['final_loss', f'{final_loss:.6f}', datetime.now().isoformat()])
         writer.writerow(['avg_reward', f'{avg_reward:.2f}', datetime.now().isoformat()])
         writer.writerow(['std_reward', f'{std_reward:.2f}', datetime.now().isoformat()])
@@ -303,6 +317,7 @@ if __name__ == "__main__":
     parser.add_argument("--n_epochs", type=int, default=100, help="Number of training epochs")
     parser.add_argument("--batch_size", type=int, default=2048, help="Batch size")
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate")
+    parser.add_argument("--data_ratio", type=float, default=1.0, help="Ratio of data to use (0.0-1.0)")
     
     args = parser.parse_args()
     
@@ -313,4 +328,5 @@ if __name__ == "__main__":
         n_epochs=args.n_epochs,
         batch_size=args.batch_size,
         lr=args.lr,
+        data_ratio=args.data_ratio,
     )
