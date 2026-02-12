@@ -69,7 +69,7 @@ def load_d4rl_dataset(env_name):
     return observations, actions, env
 
 
-def train_bc(env_name, exp_name, seed=42, n_epochs=100, batch_size=256, lr=1e-3, data_ratio=1.0):
+def train_bc(env_name, exp_name, seed=42, n_epochs=100, batch_size=256, lr=1e-3, data_ratio=1.0, n_transitions=None):
     """训练 BC 模型"""
     print(f"==========================================")
     print(f"Training BC on: {env_name}")
@@ -77,6 +77,8 @@ def train_bc(env_name, exp_name, seed=42, n_epochs=100, batch_size=256, lr=1e-3,
     print(f"Seed: {seed}")
     print(f"Epochs: {n_epochs}")
     print(f"Data ratio: {data_ratio}")
+    if n_transitions is not None:
+        print(f"N transitions: {n_transitions}")
     print(f"==========================================")
     
     # 设置随机种子
@@ -91,8 +93,15 @@ def train_bc(env_name, exp_name, seed=42, n_epochs=100, batch_size=256, lr=1e-3,
     observations, actions, env = load_d4rl_dataset(env_name)
     print(f"Full dataset size: {len(observations)} transitions")
     
+    # 按绝对数量截取数据（优先级高于 data_ratio）
+    if n_transitions is not None:
+        n_samples = min(n_transitions, len(observations))
+        indices = np.random.permutation(len(observations))[:n_samples]
+        observations = observations[indices]
+        actions = actions[indices]
+        print(f"Using {n_samples} transitions (specified by n_transitions)")
     # 按比例截取数据
-    if data_ratio < 1.0:
+    elif data_ratio < 1.0:
         n_samples = int(len(observations) * data_ratio)
         # 随机打乱后截取，保证不同 seed 取到不同子集
         indices = np.random.permutation(len(observations))[:n_samples]
@@ -318,6 +327,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=2048, help="Batch size")
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate")
     parser.add_argument("--data_ratio", type=float, default=1.0, help="Ratio of data to use (0.0-1.0)")
+    parser.add_argument("--n_transitions", type=int, default=None, help="Exact number of transitions to use (overrides data_ratio)")
     
     args = parser.parse_args()
     
@@ -329,4 +339,5 @@ if __name__ == "__main__":
         batch_size=args.batch_size,
         lr=args.lr,
         data_ratio=args.data_ratio,
+        n_transitions=args.n_transitions,
     )
