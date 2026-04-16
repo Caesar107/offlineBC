@@ -1,23 +1,17 @@
 #!/bin/bash
-# 使用 stable-baselines3 和 imitation 库运行 BC offline 训练
-# 三种环境: walker2d, hopper, halfcheetah
-# 三种数据集: medium, medium-expert (medexp), medium-replay (medrep)
-# 每个实验运行3次（使用不同的seed）
+# 断点续跑：只跑剩余未完成的实验
+# 已完成: walker2d 全部6个, hopper-medium 2个, hopper-medexp 2个
+# 未完成: hopper-medrep 2个, halfcheetah 全部6个 = 共8个实验
 
 # 注意：并行执行时不能使用 set -e，因为后台进程的退出码需要单独处理
 set -o pipefail
 
 cd /home/ssd/zml/BC_baseline
 
-# 环境列表
-ENVS=("walker2d" "hopper" "halfcheetah")
-
-# 数据集列表 (medium, medium-expert, medium-replay)
-DATASETS=("medium" "medium-expert" "medium-replay")
-DATASET_SHORT=("medium" "medexp" "medrep")
-
-# 运行次数
-NUM_RUNS=3
+# mujoco_py 编译和运行所需的环境变量
+export CPATH=/home/ssd/miniconda3/envs/py37/include:$CPATH
+export LIBRARY_PATH=/home/ssd/miniconda3/envs/py37/lib:$LIBRARY_PATH
+export LD_LIBRARY_PATH=/home/ssd/miniconda3/envs/py37/lib:/home/ssd/.mujoco/mujoco210/bin:/usr/lib/nvidia:$LD_LIBRARY_PATH
 
 # 训练轮数
 N_EPOCHS=1000
@@ -28,22 +22,17 @@ BATCH_SIZE=2048
 # 并行任务数
 MAX_PARALLEL=2
 
-# 收集所有要运行的任务
-declare -a tasks=()
-
-for env in "${ENVS[@]}"; do
-    for i in "${!DATASETS[@]}"; do
-        dataset="${DATASETS[$i]}"
-        dataset_short="${DATASET_SHORT[$i]}"
-        task="${env}-${dataset}-v0"
-        
-        for run in $(seq 1 ${NUM_RUNS}); do
-            exp_name="bc-${env}-${dataset_short}-run${run}"
-            seed=$((41 + run))
-            tasks+=("${task}|${exp_name}|${seed}")
-        done
-    done
-done
+# 直接列出剩余未完成的任务: "env_name|exp_name|seed"
+declare -a tasks=(
+    "hopper-medium-replay-v0|bc-hopper-medrep-seed333|333"
+    "hopper-medium-replay-v0|bc-hopper-medrep-seed666|666"
+    "halfcheetah-medium-v0|bc-halfcheetah-medium-seed333|333"
+    "halfcheetah-medium-v0|bc-halfcheetah-medium-seed666|666"
+    "halfcheetah-medium-expert-v0|bc-halfcheetah-medexp-seed333|333"
+    "halfcheetah-medium-expert-v0|bc-halfcheetah-medexp-seed666|666"
+    "halfcheetah-medium-replay-v0|bc-halfcheetah-medrep-seed333|333"
+    "halfcheetah-medium-replay-v0|bc-halfcheetah-medrep-seed666|666"
+)
 
 echo "Total experiments: ${#tasks[@]}"
 echo "Running ${MAX_PARALLEL} tasks in parallel"
@@ -104,6 +93,5 @@ done
 wait
 
 echo ""
-echo "All BC training experiments completed!"
+echo "All remaining BC training experiments completed!"
 echo "Total experiments: ${#tasks[@]}"
-

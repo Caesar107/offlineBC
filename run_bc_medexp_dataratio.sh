@@ -11,6 +11,11 @@ set -o pipefail
 
 cd /home/ssd/zml/BC_baseline
 
+# mujoco_py 编译和运行所需的环境变量
+export CPATH=/home/ssd/miniconda3/envs/py37/include:$CPATH
+export LIBRARY_PATH=/home/ssd/miniconda3/envs/py37/lib:$LIBRARY_PATH
+export LD_LIBRARY_PATH=/home/ssd/miniconda3/envs/py37/lib:/home/ssd/.mujoco/mujoco210/bin:/usr/lib/nvidia:$LD_LIBRARY_PATH
+
 # 环境列表
 ENVS=("hopper" "halfcheetah")
 
